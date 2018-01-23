@@ -68,6 +68,11 @@ public class DefaultDiscriminatingRepository<K,D,V> implements DiscriminatingRep
     }
 
     @Override
+    public boolean exists(final K key) {
+        return repository.exists(key);
+    }
+
+    @Override
     public V getOrNull(final K key) {
         return repository.getOrNull(key);
     }
@@ -78,17 +83,14 @@ public class DefaultDiscriminatingRepository<K,D,V> implements DiscriminatingRep
     }
 
     @Override
-    public boolean discriminatingMetricsExist(final K key) {
-        return discriminatingRepository.exists(key);
+    public V getOrNull(final K key, final D discriminator) {
+        final Repository<D, V> repoForKey = discriminatingRepository.getOrNull(key);
+        return repoForKey != null ? repoForKey.getOrNull(discriminator) : null;
     }
 
     @Override
-    public Repository<D,V> discriminatingMetricsOrNull(final K key) {
-        return discriminatingRepository.getOrNull(key);
-    }
-
-    @Override
-    public Repository<D,V> discriminatingMetrics(final K key) {
-        return discriminatingRepository.getOrCreate(key);
+    public V getOrCreate(final K key, final D discriminator) {
+        final Repository<D, V> repoForKey = discriminatingRepository.getOrCreate(key);
+        return repoForKey.getOrCreate(discriminator);
     }
 }

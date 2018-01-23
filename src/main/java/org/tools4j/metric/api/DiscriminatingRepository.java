@@ -25,10 +25,10 @@ package org.tools4j.metric.api;
 
 public interface DiscriminatingRepository<K,D,V> extends Repository<K,V> {
 
-    default boolean discriminatingMetricsExist(K key) {
-        return discriminatingMetricsOrNull(key) != null;
+    default boolean exists(K key, D discreminator) {
+        return getOrNull(key, discreminator) != null;
     }
 
-    Repository<D,V> discriminatingMetricsOrNull(K key);
-    Repository<D,V> discriminatingMetrics(K key);
+    V getOrNull(K key, D discriminator);
+    V getOrCreate(K key, D discriminator);
 }
