@@ -21,49 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
+package org.tools4j.metric.repository;
 
-import java.util.Objects;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Map;
 
-public class MinMetric implements Metric, MetricRecorder {
+final class Enums {
 
-    private double min = Double.NaN;
-    private final MetricRecorder recorder = this::record;
-    private final Printer<? super MinMetric> printer;
+    private static final Method ENUM_CONSTANT_DIRECTORY_METHOD = enumConstantDirectoryMethod();
 
-    public MinMetric() {
-        this("min");
+    static <E extends Enum<E>> int enumConstantCount(final Class<E> enumClass) {
+        final Map<?,?> constantMap = enumConstantDirectory(enumClass);
+        return constantMap != null ? constantMap.size() : enumClass.getEnumConstants().length;
     }
 
-    public MinMetric(final String name) {
-        this((metric, output) -> output.append(name).append('=').append(metric.min()));
+    private static <E extends Enum<E>> Map<?, ?> enumConstantDirectory(final Class<E> enumClass) {
+        try {
+            return (Map<?, ?>) ENUM_CONSTANT_DIRECTORY_METHOD.invoke(enumClass);
+        } catch (final IllegalAccessException | InvocationTargetException e) {
+            return null;
+        }
     }
 
-    public MinMetric(final Printer<? super MinMetric> printer) {
-        this.printer = Objects.requireNonNull(printer);
-    }
-
-    @Override
-    public MetricRecorder recorder() {
-        return recorder;
-    }
-
-    @Override
-    public void record(final double value) {
-        min = Double.isNaN(min) ? value : Double.min(min, value);
-    }
-
-    @Override
-    public void reset() {
-        min = Double.NaN;
-    }
-
-    @Override
-    public void print(final StringBuilder output) {
-        printer.print(this, output);
-    }
-
-    public double min() {
-        return min;
+    private static Method enumConstantDirectoryMethod() {
+        try {
+            final Method method = Class.class.getDeclaredMethod("enumConstantDirectory");
+            method.setAccessible(true);
+            return method;
+        } catch (final NoSuchMethodException e) {
+            return null;
+        }
     }
 }

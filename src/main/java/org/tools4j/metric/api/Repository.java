@@ -21,38 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
 
-import java.util.Objects;
+package org.tools4j.metric.api;
 
-public class GroupPrintable implements Printable {
+public interface Repository<K,V> {
 
-    private final Printer<? super Printable[]> printer;
-    private final Printable[] printables;
-
-    public GroupPrintable(final Printable... printables) {
-        this("", " ", printables);
+    default boolean exists(K key) {
+        return null == getOrNull(key);
     }
 
-    public GroupPrintable(final String prefix, final String separator, final Printable... printables) {
-        this((metric, output) -> {
-            output.append(prefix);
-            for (int i = 0; i < printables.length; i++) {
-                if (i > 0 || prefix.length() > 0) {
-                    output.append(separator);
-                }
-                printables[i].print(output);
-            }
-        }, printables);
-    }
+    V getOrNull(K key);
+    V getOrCreate(K key);
 
-    public GroupPrintable(final Printer<? super Printable[]> printer, final Printable... printables) {
-        this.printer = Objects.requireNonNull(printer);
-        this.printables = Objects.requireNonNull(printables);
-    }
-
-    @Override
-    public void print(final StringBuilder output) {
-        printer.print(printables, output);
-    }
 }

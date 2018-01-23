@@ -21,14 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
+package org.tools4j.metric.api;
 
-public interface DiscriminatingRepository<K, D> extends Repository<K, Metric> {
+import java.io.IOException;
 
-    default boolean discriminatingMetricsExist(K key) {
-        return discriminatingMetricsOrNull(key) != null;
+public interface Printable {
+    void print(StringBuilder output);
+
+    default void print(Appendable output) {
+        final StringBuilder stringBuilder = new StringBuilder();
+        print(stringBuilder);
+        try {
+            output.append(stringBuilder);
+        } catch (final IOException e) {
+            throw new IllegalArgumentException("Appendable " + output + " threw an exception, e=" + e, e);
+        }
     }
-
-    Repository<D, Metric> discriminatingMetricsOrNull(K key);
-    Repository<D, Metric> discriminatingMetrics(K key);
 }

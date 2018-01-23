@@ -21,45 +21,61 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
+package org.tools4j.metric.basic;
+
+import org.tools4j.metric.api.Metric;
+import org.tools4j.metric.api.MetricRecorder;
+import org.tools4j.metric.api.Printer;
 
 import java.util.Objects;
 
-public class RatioMetric implements Printable {
+/**
+ * Metric that tracks the avarage (or mean) of a sampled value using a numerically stable algorithm.
+ * <p>
+ * The implementation is based on Welford’s Algorithm given in Knuth Vol 2, p 232.
+ */
+public class AvgMetric implements Metric, MetricRecorder {
 
-    private final SumMetric numerator;
-    private final SumMetric denominator;
-    private final Printer<? super RatioMetric> printer;
+    private long count = 0;
+    private double avg = Double.NaN;
+    private final MetricRecorder recorder = this::record;
+    private final Printer<? super AvgMetric> printer;
 
-    public RatioMetric(final SumMetric numerator, final SumMetric denominator) {
-        this("ratio", numerator, denominator);
+    public AvgMetric() {
+        this("avg");
     }
 
-    public RatioMetric(final String name, final SumMetric numerator, final SumMetric denominator) {
-        this(numerator, denominator, (metric, output) -> output.append(name).append('=').append((float)metric.ratio()));
+    public AvgMetric(final String name) {
+        this((metric, output) -> output.append(name).append('=').append(metric.avg()));
     }
 
-    public RatioMetric(final SumMetric numerator, final SumMetric denominator,
-                       final Printer<? super RatioMetric> printer) {
-        this.numerator = Objects.requireNonNull(numerator);
-        this.denominator = Objects.requireNonNull(denominator);
+    public AvgMetric(final Printer<? super AvgMetric> printer) {
         this.printer = Objects.requireNonNull(printer);
     }
 
-    public double numerator() {
-        return numerator.sum();
+    @Override
+    public MetricRecorder recorder() {
+        return recorder;
     }
 
-    public double denominator() {
-        return denominator.sum();
+    @Override
+    public void record(final double value) {
+        count++;
+        avg = count == 1 ? value : avg + (value - avg) / count;
     }
 
-    public double ratio() {
-        return numerator() / denominator();
+    @Override
+    public void reset() {
+        count = 0;
+        avg = Double.NaN;
     }
 
     @Override
     public void print(final StringBuilder output) {
         printer.print(this, output);
+    }
+
+    public double avg() {
+        return avg;
     }
 }

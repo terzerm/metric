@@ -21,9 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
+package org.tools4j.metric.api;
 
-public interface Metric extends Printable {
-    MetricRecorder recorder();
-    void reset();
+public interface DiscriminatingRepository<K, D> extends Repository<K, Metric> {
+
+    default boolean discriminatingMetricsExist(K key) {
+        return discriminatingMetricsOrNull(key) != null;
+    }
+
+    Repository<D, Metric> discriminatingMetricsOrNull(K key);
+    Repository<D, Metric> discriminatingMetrics(K key);
 }

@@ -21,25 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
+package org.tools4j.metric.basic;
+
+import org.tools4j.metric.api.Metric;
+import org.tools4j.metric.api.MetricRecorder;
+import org.tools4j.metric.api.Printer;
 
 import java.util.Objects;
 
-public class SumMetric implements Metric, MetricRecorder {
+/**
+ * Metric that tracks the maximum of a sampled value.
+ */
+public class MaxMetric implements Metric, MetricRecorder {
 
-    private double sum;
+    private double max = Double.NaN;
     private final MetricRecorder recorder = this::record;
-    private final Printer<? super SumMetric> printer;
+    private final Printer<? super MaxMetric> printer;
 
-    public SumMetric() {
-        this("sum");
+    public MaxMetric() {
+        this("max");
     }
 
-    public SumMetric(final String name) {
-        this((metric, output) -> output.append(name).append('=').append(metric.sum()));
+    public MaxMetric(final String name) {
+        this((metric, output) -> output.append(name).append('=').append(metric.max()));
     }
 
-    public SumMetric(final Printer<? super SumMetric> printer) {
+    public MaxMetric(final Printer<? super MaxMetric> printer) {
         this.printer = Objects.requireNonNull(printer);
     }
 
@@ -50,12 +57,12 @@ public class SumMetric implements Metric, MetricRecorder {
 
     @Override
     public void record(final double value) {
-        sum += value;
+        max = Double.isNaN(max) ? value : Double.max(max, value);
     }
 
     @Override
     public void reset() {
-        sum = 0;
+        max = Double.NaN;
     }
 
     @Override
@@ -63,7 +70,7 @@ public class SumMetric implements Metric, MetricRecorder {
         printer.print(this, output);
     }
 
-    public double sum() {
-        return sum;
+    public double max() {
+        return max;
     }
 }

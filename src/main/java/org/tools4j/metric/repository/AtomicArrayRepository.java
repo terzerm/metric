@@ -21,48 +21,49 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
+package org.tools4j.metric.repository;
+
+import org.tools4j.metric.api.Repository;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
-public class ArrayRepository<K,V> implements Repository<K,V> {
+public class AtomicArrayRepository<K,V> implements Repository<K,V> {
 
     private final ToIntFunction<? super K> ordinalFunction;
     private final Function<? super K, ? extends V> valueFactory;
-    private final Object[] values;
+    private final AtomicReferenceArray<V> values;
 
-    public ArrayRepository(final int length, final ToIntFunction<? super K> ordinalFunction,
-                           final Function<? super K, ? extends V> valueFactory) {
+    public AtomicArrayRepository(final int length, final ToIntFunction<? super K> ordinalFunction,
+                                 final Function<? super K, ? extends V> valueFactory) {
         this.ordinalFunction = Objects.requireNonNull(ordinalFunction);
         this.valueFactory = Objects.requireNonNull(valueFactory);
-        this.values = new Object[length];
+        this.values = new AtomicReferenceArray<V>(length);
     }
 
-    public static <E extends Enum<E>,V> ArrayRepository<E,V> forEnum(final Class<E> enumClass,
-                                                                     final Function<? super E, ? extends V> valueFactory) {
-        return new ArrayRepository<>(Enums.enumConstantCount(enumClass), Enum::ordinal, valueFactory);
+    public static <E extends Enum<E>,V> AtomicArrayRepository<E,V> forEnum(final Class<E> enumClass,
+                                                                           final Function<? super E, ? extends V> valueFactory) {
+        return new AtomicArrayRepository<>(Enums.enumConstantCount(enumClass), Enum::ordinal, valueFactory);
     }
 
     @Override
     public V getOrNull(final K key) {
         final int ordinal = ordinalFunction.applyAsInt(key);
-        @SuppressWarnings("unchecked")//safe cast because the valueFactory returns V
-        final V value = (V)values[ordinal];
-        return value;
+        return values.get(ordinal);
     }
 
     @Override
     public V getOrCreate(final K key) {
         final int ordinal = ordinalFunction.applyAsInt(key);
-        Object val = values[ordinal];
-        if (val == null) {
-            val = valueFactory.apply(key);
-            values[ordinal] = val;
+        V value = values.get(ordinal);
+        if (value == null) {
+            value = valueFactory.apply(key);
+            if (!values.compareAndSet(ordinal, null, value)) {
+                value = values.get(ordinal);
+            }
         }
-        @SuppressWarnings("unchecked")//safe cast because the valueFactory returns V
-        final V value = (V)val;
         return value;
     }
 

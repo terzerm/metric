@@ -21,36 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
+package org.tools4j.metric.repository;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import org.tools4j.metric.api.Repository;
+
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 
-final class Enums {
+public class MapRepository<K,V> implements Repository<K,V> {
 
-    private static final Method ENUM_CONSTANT_DIRECTORY_METHOD = enumConstantDirectoryMethod();
+    private final Map<K, V> backingMap;
+    private final Function<? super K, ? extends V> valueFactory;
 
-    static <E extends Enum<E>> int enumConstantCount(final Class<E> enumClass) {
-        final Map<?,?> constantMap = enumConstantDirectory(enumClass);
-        return constantMap != null ? constantMap.size() : enumClass.getEnumConstants().length;
+    public MapRepository(final Map<K, V> backingMap, final Function<? super K, ? extends V> valueFactory) {
+        this.backingMap = Objects.requireNonNull(backingMap);
+        this.valueFactory = Objects.requireNonNull(valueFactory);
     }
 
-    private static <E extends Enum<E>> Map<?, ?> enumConstantDirectory(final Class<E> enumClass) {
-        try {
-            return (Map<?, ?>) ENUM_CONSTANT_DIRECTORY_METHOD.invoke(enumClass);
-        } catch (final IllegalAccessException | InvocationTargetException e) {
-            return null;
-        }
+    @Override
+    public V getOrNull(final K key) {
+        return backingMap.get(key);
     }
 
-    private static Method enumConstantDirectoryMethod() {
-        try {
-            final Method method = Class.class.getDeclaredMethod("enumConstantDirectory");
-            method.setAccessible(true);
-            return method;
-        } catch (final NoSuchMethodException e) {
-            return null;
-        }
+    @Override
+    public V getOrCreate(final K key) {
+        return backingMap.computeIfAbsent(key, valueFactory);
     }
+
 }

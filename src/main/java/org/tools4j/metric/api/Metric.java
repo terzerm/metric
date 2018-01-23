@@ -21,16 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package org.tools4j.metric.api;
 
-package org.tools4j.metric;
-
-public interface Repository<K,V> {
-
-    default boolean exists(K key) {
-        return null == getOrNull(key);
-    }
-
-    V getOrNull(K key);
-    V getOrCreate(K key);
-
+public interface Metric extends Printable {
+    MetricRecorder recorder();
+    void reset();
 }

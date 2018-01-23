@@ -21,49 +21,51 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
+package org.tools4j.metric.basic;
+
+import org.tools4j.metric.api.Printable;
+import org.tools4j.metric.api.Printer;
 
 import java.util.Objects;
 
-public class MaxMetric implements Metric, MetricRecorder {
+/**
+ * Printable that reports a ratio calculated by dividing two {@link SumMetric} values.
+ */
+public class RatioPrintable implements Printable {
 
-    private double max = Double.NaN;
-    private final MetricRecorder recorder = this::record;
-    private final Printer<? super MaxMetric> printer;
+    private final SumMetric numerator;
+    private final SumMetric denominator;
+    private final Printer<? super RatioPrintable> printer;
 
-    public MaxMetric() {
-        this("max");
+    public RatioPrintable(final SumMetric numerator, final SumMetric denominator) {
+        this("ratio", numerator, denominator);
     }
 
-    public MaxMetric(final String name) {
-        this((metric, output) -> output.append(name).append('=').append(metric.max()));
+    public RatioPrintable(final String name, final SumMetric numerator, final SumMetric denominator) {
+        this(numerator, denominator, (metric, output) -> output.append(name).append('=').append((float)metric.ratio()));
     }
 
-    public MaxMetric(final Printer<? super MaxMetric> printer) {
+    public RatioPrintable(final SumMetric numerator, final SumMetric denominator,
+                          final Printer<? super RatioPrintable> printer) {
+        this.numerator = Objects.requireNonNull(numerator);
+        this.denominator = Objects.requireNonNull(denominator);
         this.printer = Objects.requireNonNull(printer);
     }
 
-    @Override
-    public MetricRecorder recorder() {
-        return recorder;
+    public double numerator() {
+        return numerator.sum();
     }
 
-    @Override
-    public void record(final double value) {
-        max = Double.isNaN(max) ? value : Double.max(max, value);
+    public double denominator() {
+        return denominator.sum();
     }
 
-    @Override
-    public void reset() {
-        max = Double.NaN;
+    public double ratio() {
+        return numerator() / denominator();
     }
 
     @Override
     public void print(final StringBuilder output) {
         printer.print(this, output);
-    }
-
-    public double max() {
-        return max;
     }
 }

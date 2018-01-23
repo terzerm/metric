@@ -21,20 +21,56 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
+package org.tools4j.metric.basic;
 
-import java.io.IOException;
+import org.tools4j.metric.api.Metric;
+import org.tools4j.metric.api.MetricRecorder;
+import org.tools4j.metric.api.Printer;
 
-public interface Printable {
-    void print(StringBuilder output);
+import java.util.Objects;
 
-    default void print(Appendable output) {
-        final StringBuilder stringBuilder = new StringBuilder();
-        print(stringBuilder);
-        try {
-            output.append(stringBuilder);
-        } catch (final IOException e) {
-            throw new IllegalArgumentException("Appendable " + output + " threw an exception, e=" + e, e);
-        }
+/**
+ * Metric that tracks the sum of a sampled value.
+ */
+public class SumMetric implements Metric, MetricRecorder {
+
+    private double sum;
+    private final MetricRecorder recorder = this::record;
+    private final Printer<? super SumMetric> printer;
+
+    public SumMetric() {
+        this("sum");
+    }
+
+    public SumMetric(final String name) {
+        this((metric, output) -> output.append(name).append('=').append(metric.sum()));
+    }
+
+    public SumMetric(final Printer<? super SumMetric> printer) {
+        this.printer = Objects.requireNonNull(printer);
+    }
+
+    @Override
+    public MetricRecorder recorder() {
+        return recorder;
+    }
+
+    @Override
+    public void record(final double value) {
+        sum += value;
+    }
+
+    @Override
+    public void reset() {
+        sum = 0;
+    }
+
+    @Override
+    public void print(final StringBuilder output) {
+        printer.print(this, output);
+    }
+
+    public double sum() {
+        return sum;
     }
 }

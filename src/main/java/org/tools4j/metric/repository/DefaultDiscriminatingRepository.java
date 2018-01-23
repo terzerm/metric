@@ -21,10 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
+package org.tools4j.metric.repository;
+
+import org.tools4j.metric.api.DiscriminatingRepository;
+import org.tools4j.metric.api.Metric;
+import org.tools4j.metric.api.Repository;
 
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class DefaultDiscriminatingRepository<K,D> implements DiscriminatingRepository<K,D> {
 
@@ -38,11 +43,21 @@ public class DefaultDiscriminatingRepository<K,D> implements DiscriminatingRepos
     }
 
     public static <K extends Enum<K>,D extends Enum<D>> DefaultDiscriminatingRepository<K,D> forEnums(
+            final Class<K> keyClass, final Class<D> discriminatorClass, final Supplier<? extends Metric> metricFactory) {
+        return forEnums(keyClass, k -> metricFactory.get(), discriminatorClass, d -> metricFactory.get());
+    }
+
+    public static <K extends Enum<K>,D extends Enum<D>> DefaultDiscriminatingRepository<K,D> forEnums(
             final Class<K> keyClass, final Function<? super K, ? extends Metric> metricFactory,
             final Class<D> discriminatorClass, final Function<? super D, ? extends Metric> discriminatedMetricFactory) {
         return new DefaultDiscriminatingRepository<>(ArrayRepository.forEnum(keyClass, metricFactory),
                 ArrayRepository.forEnum(keyClass, k -> ArrayRepository.forEnum(
                         discriminatorClass, discriminatedMetricFactory)));
+    }
+
+    public static <K extends Enum<K>,D extends Enum<D>> DefaultDiscriminatingRepository<K,D> atomicForEnums(
+            final Class<K> keyClass, final Class<D> discriminatorClass, final Supplier<? extends Metric> metricFactory) {
+        return atomicForEnums(keyClass, k -> metricFactory.get(), discriminatorClass, d -> metricFactory.get());
     }
 
     public static <K extends Enum<K>,D extends Enum<D>> DefaultDiscriminatingRepository<K,D> atomicForEnums(

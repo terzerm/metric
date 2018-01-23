@@ -21,30 +21,44 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.metric;
+package org.tools4j.metric.basic;
 
-import java.util.Map;
+import org.tools4j.metric.api.Printable;
+import org.tools4j.metric.api.Printer;
+
 import java.util.Objects;
-import java.util.function.Function;
 
-public class MapRepository<K,V> implements Repository<K,V> {
+/**
+ * Prints a list of printables that logically form a group.
+ */
+public class GroupPrintable implements Printable {
 
-    private final Map<K, V> backingMap;
-    private final Function<? super K, ? extends V> valueFactory;
+    private final Printer<? super Printable[]> printer;
+    private final Printable[] printables;
 
-    public MapRepository(final Map<K, V> backingMap, final Function<? super K, ? extends V> valueFactory) {
-        this.backingMap = Objects.requireNonNull(backingMap);
-        this.valueFactory = Objects.requireNonNull(valueFactory);
+    public GroupPrintable(final Printable... printables) {
+        this("", " ", printables);
+    }
+
+    public GroupPrintable(final String prefix, final String separator, final Printable... printables) {
+        this((metric, output) -> {
+            output.append(prefix);
+            for (int i = 0; i < printables.length; i++) {
+                if (i > 0 || prefix.length() > 0) {
+                    output.append(separator);
+                }
+                printables[i].print(output);
+            }
+        }, printables);
+    }
+
+    public GroupPrintable(final Printer<? super Printable[]> printer, final Printable... printables) {
+        this.printer = Objects.requireNonNull(printer);
+        this.printables = Objects.requireNonNull(printables);
     }
 
     @Override
-    public V getOrNull(final K key) {
-        return backingMap.get(key);
+    public void print(final StringBuilder output) {
+        printer.print(printables, output);
     }
-
-    @Override
-    public V getOrCreate(final K key) {
-        return backingMap.computeIfAbsent(key, valueFactory);
-    }
-
 }
